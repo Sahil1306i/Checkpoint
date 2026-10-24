@@ -1,6 +1,158 @@
 <main class="page-shell">
   <section class="hero-panel">
-    <div class="eyevrow"></div>
-  </section>hero-copy
+    <div class="hero-copy">
+      <p class="eyebrow">Resumio file intake</p>
+      <h1>{{ title }}</h1>
+      <p class="hero-text">{{ subtitle }}</p>
 
+      <div class="hero-metrics">
+        <article>
+          <span class="metric-label">Selected file</span>
+          <strong>{{ selectedFileName() }}</strong>
+        </article>
+        <article>
+          <span class="metric-label">Estimate size</span>
+          <strong>{{ selectedFileSize() }}</strong>
+        </article>
+        <article>
+          <span class="metric-label">Chunks uploaded</span>
+          <strong>{{ uploadedChunks() }} / {{ totalChunks() || 0 }}</strong>
+        </article>
+      </div>
+    </div>
+
+    <div class="hero-card">
+      <label
+        for="file-upload"
+        class="upload-dropzone"
+        [class.drag-over]="isDragOver()"
+        (dragover)="onDragOver($event)"
+        (dragleave)="onDragLeave($event)"
+        (drop)="onDrop($event)"
+      >
+        <input id="file-upload" type="file" (change)="onFileSelected($event)" />
+
+        <span class="upload-badge">Single file upload</span>
+        <h2>Drop in a file or click to browse</h2>
+        <p>The upload is split, sent, verified and completed automatically.</p>
+      </label>
+
+      <div class="cta-row">
+        <button
+          class="primary-button"
+          (click)="startUpload()"
+          [disabled]="!selectedFile() || isUploading()"
+        >
+          {{ isUploading() ? 'Uploading...' : 'Start upload' }}
+        </button>
+        <div class="secondary-actions">
+          <button
+            type="button"
+            class="secondary-button"
+            (click)="cancelUpload()"
+            [disabled]="!isUploading()"
+          >
+            Cancel Upload
+          </button>
+          <button
+            type="button"
+            class="secondary-button"
+            (click)="retryUpload()"
+            [disabled]="!canRetry() || isUploading()"
+          >
+            Retry upload
+          </button>
+        </div>
+        <p class="supporting-copy">
+          @if (selectedFile()) {
+            {{ selectedFileName() }} is queued and ready.
+          } @else {
+            Choose a file to unlock the upload flow.
+          }
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <section class="status-grid">
+    <article class="status-card progress-card">
+      <div class="card-heading">
+        <div>
+          <p class="section-label">Live progress</p>
+          <h3>Processing status</h3>
+        </div>
+        <span
+          class="status-pill"
+          [class.error]="!!errorMessage()"
+          [class.complete]="activeStage() === 'completed'"
+        >
+          @if (errorMessage()) {
+            Attention needed
+          } @else if (activeStage() === 'completed') {
+            Complete
+          } @else if (isUploading()) {
+            In progress
+          } @else {
+            Waiting
+          }
+        </span>
+      </div>
+
+      <div
+        class="progress-track"
+        role="progressbar"
+        [attr.aria-valuenow]="progressPercentage()"
+        aria-valuemin="0"
+        aria-valuemax="100"
+        [attr.aria-valuetext]="progressPercentage() + '% complete'"
+      >
+        <div class="progress-fill" [style.width.%]="progressPercentage()"></div>
+      </div>
+
+      <div class="progress-stats" aria-live="polite">
+        <strong>{{ progressPercentage() }}</strong>
+        <span>{{ stageMessage() }}</span>
+      </div>
+
+      @if (errorMessage()) {
+        <p class="message-banner error-banner">{{ errorMessage() }}</p>
+      } @else if (activeStage() === 'completed') {
+        <p class="message-banner success-banner">All upload steps completed successfully.</p>
+      }
+    </article>
+
+    <article class="status-card timeline-card">
+      <div class="card-heading">
+        <div>
+          <p class="section-label">What the user sees</p>
+          <h3>Upload timeline</h3>
+        </div>
+        <span class="timeline-counter">{{ completedStageCount() }}/5 done</span>
+      </div>
+
+      <div class="timeline">
+        @for (stage of timelineItems(); track stage.id) {
+          <article
+            class="timeline-item"
+            [class.active]="stage.state === 'active'"
+            [class.complete]="stage.state === 'complete'"
+          >
+            <div class="timeline-row">
+              <div class="timeline-marker" aria-hidden="true">
+                <span></span>
+              </div>
+
+              <div class="timeline-content">
+                <div class="timeline-header">
+                  <h4>{{ stage.label }}</h4>
+                  <small>{{ stage.statusLabel }}</small>
+                </div>
+                <p class="timeline-description">{{ stage.description }}</p>
+              </div>
+            </div>
+          </article>
+        }
+      </div>
+    </article>
+  </section>
 </main>
